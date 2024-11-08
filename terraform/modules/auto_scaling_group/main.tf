@@ -20,7 +20,7 @@ resource "aws_autoscaling_group" "web_asg" {
       instance_warmup        = 300  # Waits 5 minutes before checking health
     }
   
-    triggers = ["launch_template"]
+    #triggers = ["launch_template"]
   }
   tag {
     key                 = "Name"
