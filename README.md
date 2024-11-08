@@ -100,6 +100,7 @@ You should now be able to access the application at `http://localhost:8000`.
    - `AWS_ACCESS_KEY_ID`: AWS Access Key ID for Terraform access.
    - `AWS_SECRET_ACCESS_KEY`: AWS Secret Access Key for Terraform access.
    - `TOKEN`: Personal GitHub token to enable manual approval.
+3. **Create Secrets Manager for env variables**: Before doing tf apply please create secrets manager for api. Those env variables will be used in application setup. And update secrets-name accordingly in terraform/provisioner/install_dependencies.sh. Line no: 35 and 36     
 
 ## Project Structure
 
