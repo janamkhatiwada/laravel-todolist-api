@@ -1,163 +1,266 @@
-# Laravel To-Do List API
+## Local Setup
 
-A simple To-Do list API built with Laravel.
+Make sure you have the following installed:
 
-## Setup Instructions
-
-Follow these steps to get the application up and running.
-
-### Prerequisites
-
-- MySQL Server
-- Redis Server
-- PHP 8.3
+- Docker & Docker Compose
+- Git
 - PHP Composer
 
-### Installation Steps
+## Local Setup Instructions
 
-1. **Create MySQL and Redis servers**
+### 1. Clone the Repository
 
-   Ensure that you have MySQL and Redis servers set up and running.
+Clone the repository from GitHub:
 
-2. **Copy `.env` file**
+```bash
+git clone https://github.com/janamkhatiwada/laravel-todolist-api.git
+cd laravel-todolist-api
+```
 
-   ```bash
-   cp .env.example .env
-   ```
+### 2. Configure Environment
 
-3. **Update `.env` file**
+Copy the example environment file and adjust environment variables as needed:
 
-   Update the `.env` file with your environment-specific details, such as database credentials and Redis connection.
+```bash
+cp .env.example .env
+```
 
-4. **Install Dependencies**
+Update `.env` with the following configuration for Docker if not already setup here i have pushed a .env that works with docker-compose:
 
-   ```bash
-   composer install
-   ```
+```env
+DB_CONNECTION=mysql
+DB_HOST=db
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=laravel_user
+DB_PASSWORD=laravel_password
 
-5. **Generate Application Key**
+REDIS_HOST=redis
+REDIS_PORT=6379
+```
 
-   ```bash
-   php artisan key:generate
-   ```
+### 3. Build Docker Image
 
-6. **Run Database Seeder**
+Build the Docker image to ensure the `app` service has all the necessary dependencies and configurations:
 
-   ```bash
-   php artisan db:seed
-   ```
+```bash
+docker-compose build app
+```
 
-7. **Serve site with herd or valet or nginx**
+### 4. Install Composer Dependencies
 
-    #### herd example
-    ```bash
-   herd domain test
-   herd link laravel-todolist-api
-   herd secure --site=laravel-todolist-api
-   ```
+Run Composer to install the necessary dependencies:
+
+```bash
+docker-compose run --rm app composer install
+```
+
+### 5. Generate Application Key
+
+Run the following command to generate the application key:
+
+```bash
+docker-compose run --rm app php artisan key:generate
+```
+
+### 6. Run Migrations and Seed Database
+
+Run the migrations to create the database tables and seed initial data:
+
+```bash
+docker-compose run --rm app php artisan migrate --seed
+```
+
+### 7. Start Docker Containers
+
+Finally, start the Docker containers:
+
+```bash
+docker-compose up -d
+```
+
+This will start:
+
+- `app`: The PHP application container.
+- `webserver`: Nginx for serving the Laravel app.
+- `db`: MySQL for database storage.
+- `redis`: Redis for caching and queueing.
+
+### 8. Access the Application
+
+You should now be able to access the application at `http://localhost:8000`.
+
+
+# Deployment with Terraform and GitHub Actions CI/CD
+
+## Prerequisites
+
+1. **AWS Account**: Ensure you have an AWS account with IAM permissions to manage resources.
+2. **GitHub Repository Secrets**: Set up the following secrets in your GitHub repository:
+   - `AWS_ACCESS_KEY_ID`: AWS Access Key ID for Terraform access.
+   - `AWS_SECRET_ACCESS_KEY`: AWS Secret Access Key for Terraform access.
+   - `TOKEN`: Personal GitHub token to enable manual approval.
+
+## Project Structure
+
+The project uses Terraform for infrastructure provisioning and GitHub Actions for the CI/CD workflow. Below is an example directory structure:
+
+```plaintext
+.
+├── main.tf                # Main Terraform configuration file
+├── variables.tf           # Terraform variable definitions
+├── modules/               # Terraform modules for networking, autoscaling, IAM, etc.
+├── provisioner/
+│   └── install_dependencies.sh   # Script for provisioning instances
+└── .github/
+    └── workflows/
+        └── deploy.yml     # GitHub Actions CI/CD workflow
+```
+
+## Workflow Overview
+
+### Workflow Triggers
+
+The workflow (`deploy.yml`) triggers on:
+- **Push to `main` branch**: Initiates deployment for changes merged to the `main` branch.
+- **Manual Dispatch**: Allows manual triggering of the workflow via GitHub's UI (`workflow_dispatch`).
+
+### Workflow Steps
+
+1. **terraform-plan**: This job includes steps to plan, manually approve, and apply Terraform changes on AWS.
+
+#### Steps in Detail
+
+1. **Checkout repository**: Clones the GitHub repository into the workflow environment.
    
-Follow official documentation for nginx configuration and valet.
+   ```yaml
+   - name: Checkout repository
+     uses: actions/checkout@v3
+   ```
 
-### Verify Application Functionality
+2. **Setup Terraform**: Installs Terraform, ensuring the environment is ready for running Terraform commands.
+   
+   ```yaml
+   - name: Setup Terraform
+     uses: hashicorp/setup-terraform@v2
+     with:
+       terraform_wrapper: false
+   ```
 
-You can test the application using the following HTTP requests:
+3. **Configure AWS credentials**: Configures AWS credentials using GitHub secrets to grant access to AWS resources.
+   
+   ```yaml
+   - name: Configure AWS credentials
+     uses: aws-actions/configure-aws-credentials@v2
+     with:
+       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+       aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+       aws-region: us-east-1
+   ```
 
-#### 1. Register
+4. **Plan Terraform**: Initializes Terraform and creates an execution plan without making any changes. The output is saved as `tfplan`, which shows the infrastructure changes.
+   
+   ```yaml
+   - name: Plan Terraform
+     id: terraform_plan
+     run: cd terraform && terraform init && terraform plan -out=tfplan
+   ```
 
-**Request:**
+5. **Manual Approval**: Requests manual approval before applying changes. An issue is created in the repository for specified approvers to review and approve.
+   
+   ```yaml
+   - uses: trstringer/manual-approval@v1
+     with:
+       secret: ${{ secrets.TOKEN }}
+       approvers: janamkhatiwada
+       minimum-approvals: 1
+       issue-title: "Deploying to prod"
+       issue-body: "Review the terraform plan, then approve or deny the deployment to prod."
+       exclude-workflow-initiator-as-approver: false
+   ```
 
-```http
-POST https://laravel-todolist-api.test/api/register
-Content-Type: application/json
+6. **Terraform apply**: If approval is granted, the `terraform apply` command is executed to apply the changes and deploy the infrastructure to AWS.
+   
+   ```yaml
+   - name: Terraform apply
+     run: |
+       cd terraform && terraform apply
+   ```
 
-{
-  "name": "user",
-  "email": "user@user.com",
-  "password": "password",
-  "password_confirmation": "password"
+## Deployment Configuration Details
+
+The deployment configuration provisions a highly available, autoscaling setup on AWS using:
+
+1. **Launch Templates**: Configures instances with user data scripts for initial setup.
+2. **Auto Scaling Group (ASG)**: Ensures availability and scalability by automatically adjusting the number of instances.
+3. **Application Load Balancer (ALB)**: Balances incoming traffic across instances, with health checks to route traffic only to healthy instances.
+4. **Instance Refresh**: Configures rolling updates for ASG to minimize downtime during deployments by replacing instances gradually.
+
+### Example Terraform Configuration Snippet (main.tf)
+
+```hcl
+module "networking" {
+  source             = "./modules/networking_module"
+  vpc_cidr           = "10.0.0.0/16"
+  availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
+  environment        = "prod"
+}
+
+module "launch_template" {
+  source                   = "./modules/launch_template"
+  launch_template_name     = "web-lt"
+  instance_type            = "t2.micro"
+  ami_id                   = var.ami_id
+  security_group_id        = module.security_group.id
+  iam_instance_profile_name = aws_iam_instance_profile.secrets_manager_instance_profile.name
+  environment              = "prod"
 }
 ```
 
-#### 2. Login
+### Health Check Configuration
 
-**Request:**
+The load balancer only forwards traffic to healthy instances based on a health check configuration that pings the root path (`/`) every 30 seconds.
 
-```http
-POST https://laravel-todolist-api.test/api/login
-Content-Type: application/json
-
-{
-  "email": "user@user.com",
-  "password": "password"
+```hcl
+resource "aws_lb_target_group" "web_tg" {
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  health_check {
+    path                = "/"
+    protocol            = "HTTP"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 3
+    unhealthy_threshold = 2
+  }
 }
 ```
 
-#### 3. Create To-Do Item
+## Rolling Updates with Auto Scaling Group
 
-**Request:**
+The configuration ensures that updates follow a rolling update pattern, with only 50% of instances being replaced at any given time. This minimizes downtime and maintains availability.
 
-```http
-POST https://laravel-todolist-api.test/api/todo
-Authorization: Bearer YOUR_ACCESS_TOKEN
-Content-Type: application/json
-
-{
-  "title": "todo title",
-  "description": "todo description",
-  "completed": "0"
+```hcl
+instance_refresh {
+  strategy = "Rolling"
+  preferences {
+    min_healthy_percentage = 50
+  }
 }
 ```
 
-#### 4. List To-Do Items
+## Updating Code and Infrastructure
 
-**Request:**
+To deploy new changes:
+1. Update the code or Terraform configurations.
+2. Push to the `main` branch or manually trigger the workflow.
+3. Review and approve the deployment plan when prompted.
+4. The new infrastructure will be rolled out according to the `instance_refresh` configuration.
 
-```http
-GET https://laravel-todolist-api.test/api/todo
-Authorization: Bearer YOUR_ACCESS_TOKEN
-Content-Type: application/json
-```
+## Summary
 
-#### 5. To-Do Item Detail
-
-**Request:**
-
-```http
-GET https://laravel-todolist-api.test/api/todo/1
-Authorization: Bearer YOUR_ACCESS_TOKEN
-Content-Type: application/json
-
-{
-  "completed": 1
-}
-```
-
-#### 6. Update To-Do Item
-
-**Request:**
-
-```http
-PATCH https://laravel-todolist-api.test/api/todo/1
-Authorization: Bearer YOUR_ACCESS_TOKEN
-Content-Type: application/json
-
-{
-  "title": "todo title",
-  "description": "todo description",
-  "completed": "1"
-}
-```
-
-#### 7. Delete To-Do Item
-
-**Request:**
-
-```http
-DELETE https://laravel-todolist-api.test/api/todo/1
-Authorization: Bearer YOUR_ACCESS_TOKEN
-Content-Type: application/json
-```
-
----
-
-Replace `YOUR_ACCESS_TOKEN` with the actual token obtained during login for authorization.
+This setup provides a robust, automated deployment process with GitHub Actions CI/CD and Terraform, featuring:
+- Infrastructure-as-code (IaC) with Terraform.
+- Secure deployment to AWS using IAM and Secrets Manager.
+- Highly available infrastructure with auto-scaling, load balancing, and rolling updates.
