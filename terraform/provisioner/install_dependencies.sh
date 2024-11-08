@@ -1,5 +1,5 @@
 #!/bin/bash
-
+MYSQL_ROOT_PASSWORD=root
 sudo apt update -y
 sudo apt upgrade -y
 
@@ -32,7 +32,7 @@ if ! command -v aws &> /dev/null; then
     sudo ./aws/install
 fi
 
-AWS_ENV_SECRET_NAME="prod/env"
+AWS_ENV_SECRET_NAME="prod/env-mysql"
 AWS_REGION="us-east-1"  
 env_json=$(aws secretsmanager get-secret-value --secret-id $AWS_ENV_SECRET_NAME --query SecretString --output text --region $AWS_REGION)
 
