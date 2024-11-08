@@ -16,10 +16,10 @@ resource "aws_key_pair" "web_server_key" {
 }
 
 # Save the private key locally for SSH access
-resource "local_file" "private_key" {
-  content  = tls_private_key.web_server_key.private_key_pem
-  filename = "${path.module}/id_rsa_${var.key_name}.pem"
-}
+#resource "local_file" "private_key" {
+#  content  = tls_private_key.web_server_key.private_key_pem
+#  filename = "${path.module}/id_rsa_${var.key_name}.pem"
+#}
 
 resource "null_resource" "chmod_key" {
   provisioner "local-exec" {
