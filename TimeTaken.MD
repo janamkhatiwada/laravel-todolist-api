@@ -4,3 +4,4 @@
 - **Writing Instructions:** ~20 mins
 - **Added Terraform Modules and Code for Deploying Application to AWS Server for this Commit:** 3 hours
 - **used launch template, ALB, and autoscaling group for HA for this commit** 3 hours
+- **added detailed readme.md for terrafor/deploy and CI/CD** ~1.5 hours
