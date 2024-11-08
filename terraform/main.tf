@@ -3,7 +3,13 @@ provider "aws" {
 }
 
 data "aws_caller_identity" "current" {}
-
+terraform {
+  backend "s3" {
+    bucket  = "test-tf-bucket-0001"
+    key     = "prod.tfstate"
+    region  = "us-east-1"
+  }
+}
 # Networking Module for VPC, Subnets, and NAT Gateway
 module "networking" {
   source              = "./modules/networking_module"
