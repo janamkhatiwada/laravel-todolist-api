@@ -30,12 +30,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1 
 
-      - name: Initialize Terraform
-        run: terraform init
-
       - name: Plan Terraform
         id: terraform_plan
-        run: cd terraform && terraform plan -out=tfplan
+        run: cd terraform && terraform init && terraform plan -out=tfplan
 
       - name: Send email notification for review
         if: always()
