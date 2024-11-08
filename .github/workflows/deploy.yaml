@@ -35,7 +35,7 @@ jobs:
 
       - name: Plan Terraform
         id: terraform_plan
-        run: terraform plan -out=tfplan
+        run: cd terraform && terraform plan -out=tfplan
 
       - name: Send email notification for review
         if: always()
