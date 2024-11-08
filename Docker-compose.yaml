@@ -14,6 +14,7 @@ services:
     depends_on:
       - db
       - redis
+      - mailhog
 
   webserver:
     image: nginx:alpine
@@ -48,6 +49,14 @@ services:
     container_name: laravel_redis
     ports:
       - 6379:6379
+    networks:
+      - laravel_network
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: laravel_mailhog
+    ports:
+      - 8025:8025
     networks:
       - laravel_network
 
