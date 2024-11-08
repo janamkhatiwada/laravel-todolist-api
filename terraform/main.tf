@@ -36,8 +36,8 @@ module "compute" {
   ami_id             = var.ami_id
   security_group_id  = module.security_group.id
   ssh_private_key    = module.key_pair.private_key_path
-  mysql_root_password = module.key_pair.mysql_root_password_secret_arn  # Use the ARN from the key_pair module
-  iam_role_name      = module.iam_role.secrets_manager_role_name  # Use the correct output name
+  mysql_root_password = module.key_pair.mysql_root_password_secret_arn
+  iam_role_name      = module.iam_role.secrets_manager_role_name 
 
 }
 
