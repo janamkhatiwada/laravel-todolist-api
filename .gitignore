@@ -17,3 +17,8 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+.terraform
+terraform.tfstate*
+terraform.tfvars
+.terraform.*
+/terraform/modules/key_pair/*.pem
