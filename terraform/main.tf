@@ -56,14 +56,17 @@ module "launch_template" {
   source                     = "./modules/launch_template"
   launch_template_name       = "web-lt"
   instance_type              = var.instance_type
-  ami_id                     = var.ami_id
+  base_ami_id                = var.base_ami_id
+  ami_id_override            = var.ami_id_override  # Use variable for manually provided AMI override
   key_name                   = module.key_pair.key_name
+  subnet_id                  = module.networking.public_subnet_ids[0]
   security_group_id          = module.security_group.id
   iam_instance_profile_name  = aws_iam_instance_profile.secrets_manager_instance_profile.name
   mysql_root_password_secret_arn = module.key_pair.mysql_root_password_secret_arn
   environment                = "prod"
+  region                     = var.region
+  ssh_private_key            = module.key_pair.private_key_path
 }
-
 # Auto Scaling Group for Private Subnet Instances
 module "auto_scaling_group" {
   source             = "./modules/auto_scaling_group"
@@ -103,4 +106,8 @@ output "public_subnet_ids" {
 
 output "private_subnet_ids" {
   value = module.networking.private_subnet_ids
+}
+output "new_ami_id" {
+  description = "The newly created AMI ID from the launch_template module"
+  value       = module.launch_template.new_ami_id
 }

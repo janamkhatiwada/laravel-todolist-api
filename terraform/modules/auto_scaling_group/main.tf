@@ -6,7 +6,7 @@ resource "aws_autoscaling_group" "web_asg" {
   
   launch_template {
     id      = var.launch_template_id
-    version = "$Latest"
+    version = "11"
   }
 
   health_check_type         = "ELB"
@@ -20,7 +20,7 @@ resource "aws_autoscaling_group" "web_asg" {
       instance_warmup        = 300  # Waits 5 minutes before checking health
     }
   
-    #triggers = ["launch_template"]
+    triggers = ["launch_template"]
   }
   tag {
     key                 = "Name"
