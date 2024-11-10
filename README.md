@@ -25,7 +25,7 @@ Copy the example environment file and adjust environment variables as needed:
 cp .env.example .env
 ```
 
-Update `.env` with the following configuration for Docker if not already setup here i have pushed a .env that works with docker-compose:
+Update `.env` with the following configuration for Docker:
 
 ```env
 DB_CONNECTION=mysql
@@ -37,7 +37,20 @@ DB_PASSWORD=laravel_password
 
 REDIS_HOST=redis
 REDIS_PORT=6379
+
+MAIL_MAILER=smtp
+MAIL_HOST=mailhog
+MAIL_PORT=1025
+
+FILESYSTEM_DRIVER=s3
+AWS_ACCESS_KEY_ID=minioadmin
+AWS_SECRET_ACCESS_KEY=minioadminpassword
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=your-bucket-name
+AWS_URL=http://localhost:9000
 ```
+
+Replace `your-bucket-name` with the desired bucket name for MinIO.
 
 ### 3. Build Docker Image
 
@@ -85,10 +98,19 @@ This will start:
 - `webserver`: Nginx for serving the Laravel app.
 - `db`: MySQL for database storage.
 - `redis`: Redis for caching and queueing.
+- `mailhog`: MailHog for capturing emails sent by Laravel (accessible at `http://localhost:8025`).
+- `minio`: MinIO as an S3-compatible storage service (API on `http://localhost:9000` and Console at `http://localhost:9001`).
 
 ### 8. Access the Application
 
 You should now be able to access the application at `http://localhost:8000`.
+
+---
+
+### Additional Access Information:
+
+- **MailHog**: Check captured emails at `http://localhost:8025`.
+- **MinIO Console**: Manage S3-compatible storage at `http://localhost:9001` with credentials `minioadmin`/`minioadminpassword`.
 
 
 # Deployment with Terraform and GitHub Actions CI/CD
